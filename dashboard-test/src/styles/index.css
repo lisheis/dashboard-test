@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-white antialiased min-h-screen font-sans;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-glass border border-glass-border backdrop-blur-glass shadow-xl shadow-black/40 rounded-2xl;
+  }
+  
+  .glass-card-hover {
+    @apply transition-all duration-300 hover:shadow-primary/20 hover:border-primary/50;
+  }
+}
+
+/* Custom Webkit scrollbar for dark modern UI */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-white/10 rounded-full hover:bg-white/20 transition-colors;
+}
