@@ -12,30 +12,19 @@ export interface RawTransaction {
 /**
  * Camada de Extrator (Service/Extractor Layer)
  * 
- * Contém funções puras projetadas para processar e extrair recortes 
- * específicos dos grandes blocos de dados JSON brutos (Raw Data).
- * O objetivo fundamental desta camada é purificar a entrada de dados.
+ * Centraliza as regras de negócio puras (Extrações, Validações, Filtros Temporais e Cálculos Base).
+ * Garantimos tipagem forte usando TypeScript e funções puramente funcionais (sem efeitos colaterais).
  */
 
 /**
- * Extrai e normaliza transações brutas de um payload tipado genérico.
- * @param rawData O array contendo JSON recebido da API.
- * @returns Array seguro de `RawTransaction`.
- * @complexity O(1) conversão de tipos (na vida real O(N) com validação de scheme Zod).
+ * Filtra as transações para um Ano e Mês específicos.
+ * @param transactions Array bruto de transações.
+ * @param year Ano a ser filtrado (ex: 2024).
+ * @param month Mês numérico (1 a 12).
+ * @returns Array de transações restrito àquele mês/ano.
+ * @description Utilizamos a extração UTC das datas para evitar distorções de fuso horário. Complexidade O(N).
  */
-export const extractAllTransactions = (rawData: unknown[]): RawTransaction[] => {
-  return rawData as RawTransaction[];
-};
-
-/**
- * Filtra a massa de dados mantendo unicamente registros de um mês e ano específicos.
- * @param transactions Array bruto
- * @param year Ano (ex: 2023)
- * @param month Mês (1-12)
- * @returns Array de `RawTransaction` correspondente
- * @complexity O(N) operando validação de string temporal.
- */
-export const filterTransactionsByDate = (transactions: RawTransaction[], year: number, month: number): RawTransaction[] => {
+export const filterTransactionsByPeriod = (transactions: RawTransaction[], year: number, month: number): RawTransaction[] => {
   return transactions.filter(t => {
     const d = new Date(t.date);
     return d.getUTCFullYear() === year && (d.getUTCMonth() + 1) === month;
@@ -43,37 +32,44 @@ export const filterTransactionsByDate = (transactions: RawTransaction[], year: n
 };
 
 /**
- * Redutor simples para calcular a soma total de qualquer agrupamento de transações.
- * Muito útil logo após extrair uma lista filtrada.
- * @param transactions Lista extraída/refinada.
- * @returns Total monetário.
- * @complexity O(N) no reduce do array.
+ * Filtra as transações apenas para um Ano específico.
+ * @param transactions Array bruto.
+ * @param year Ano a ser filtrado.
+ * @returns Array restrito ao ano.
+ */
+export const filterTransactionsByYear = (transactions: RawTransaction[], year: number): RawTransaction[] => {
+  return transactions.filter(t => new Date(t.date).getUTCFullYear() === year);
+};
+
+/**
+ * Redutor genérico para soma total de montantes.
+ * @param transactions Array previamente filtrado.
+ * @returns Número representando o valor financeiro total.
+ * @description O `reduce` consolida os valores iterando apenas uma vez pelo array (O(N)).
  */
 export const calculateTotalAmount = (transactions: RawTransaction[]): number => {
   return transactions.reduce((acc, curr) => acc + curr.amount, 0);
 };
 
 /**
- * Cria um grupo de despesas por categoria iterando a massa principal.
- * @param transactions Matriz contendo despesas e receitas.
- * @returns Dicionário combinando NomeDaCategoria -> ValorTotal.
- * @complexity O(N) combinando filtragem e agrupamento de chaves via reduce.
+ * Agrupa transações por categoria e soma os seus montantes totais.
+ * @param transactions Matriz contendo despesas ou receitas.
+ * @returns Dicionário (Record<string, number>) mapeando Categoria -> Valor.
+ * @description Cria buckets de agregação ideais para montar gráficos de Pizza (Donuts).
  */
-export const groupExpensesByCategory = (transactions: RawTransaction[]): Record<string, number> => {
-  return transactions
-    .filter(t => t.type === 'expense')
-    .reduce((acc, curr) => {
-      acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
-      return acc;
-    }, {} as Record<string, number>);
+export const aggregateByCategory = (transactions: RawTransaction[]): Record<string, number> => {
+  return transactions.reduce((acc, curr) => {
+    acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
+    return acc;
+  }, {} as Record<string, number>);
 };
 
 /**
- * Recupera os itens inseridos visualmente mais recentemente baseados estritamente na data temporal em milissegundos.
- * @param transactions A lista global
- * @param limit A volumetria a ser extraída
- * @returns Lista em ordem Top C to Bottom de transações Recentes
- * @complexity O(N log N) porque invoca o método Sort() para ordenar decrescente.
+ * Ordena as transações de forma cronológica decrescente e limita a quantidade.
+ * @param transactions Array a ser ordenado.
+ * @param limit Quantidade máxima a retornar.
+ * @returns Últimos registros inseridos.
+ * @description Complexidade O(N log N) por utilizar `sort()`.
  */
 export const extractRecentTransactions = (transactions: RawTransaction[], limit: number = 5): RawTransaction[] => {
   const sorted = [...transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());

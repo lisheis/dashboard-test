@@ -1,39 +1,27 @@
-# Dashboard Financeiro Neon (Quick Start)
+# Neon Finance Dashboard
 
-Este projeto é um painel financeiro altamente modular, projetado utilizando as melhores práticas do Glassmorphism e Dark UI, construído em React + Vite. O código foi arquitetado focando no padrão "Clean Code", com separação rigorosa de funções de Negócio (ETL) e de Interface.
+O **Neon Dashboard** é uma plicação corporativa e Pixel-Perfect de análise financeira pessoal, executada em React + Vite. Seu layout é rigorosamente inspirado num grid responsivo modular, entregando uma interface hiper-escura acentuada por cores Ciano e Magenta, livre de poluição visual (como linhas de grade excessivas).
 
-> Para detalhes em profundidade sobre a Arquitetura (Extratores, State Hooks e Segurança de Tokens), verifique a [Documentação Detalhada](./DOCUMENTACAO_DETALHADA.md).
+## 🚀 Instalação e Inicialização Rápida (Quick Start)
 
-## ⚡ Instalação e Inicialização Rápida
-
-Siga este passo a passo para configurar o Dashboard na sua máquina.
-
-### 1. Requisitos
-- Node.js instalado (Versão 16 ou superior).
-
-### 2. Rodar o Projeto
-No terminal do próprio VS Code ou no seu console favorito:
+Ambiente necessário: Node 16+
 
 ```bash
-# Navegue até a raiz do projeto (se já não estiver nela)
-cd dashboard-test
-
-# Instale os pacotes principais contidos no package.json
-# (Vite, React, Tailwind, ApexCharts, Lucide Icons, Date-fns, etc.)
+# 1. Instalar as dependências globais e de interface do projeto
 npm install
 
-# Inicie o servidor em ambiente local
+# 2. Configurar Variáveis de Ambiente locais baseadas no modelo (Mock Seguro)
+cp .env.example .env
+
+# 3. Rodar o Dev Server na sua porta local (geralmente localhost:5173)
 npm run dev
 ```
-Após o comando `dev`, no console aparecerá um link do `localhost` (como `http://localhost:5173`). Basta clicar ou acessar pelo navegador.
 
-### 3. Configurando o Ambiente Seguro (.env)
-A aplicação necessita de configurações de ambiente simulando um contexto de mercado, provendo segurança às credenciais do Front-end:
+## 🏗 Como os Dados Fluem no Backend do App?
 
-Copie e cole o nosso arquivo modelo enviando-o para um arquivo local não versionado:
-```bash
-cp .env.example .env
-```
-*(Confira se no arquivo `.env` gerado a propriedade `VITE_ENABLE_MOCK_DATA` está `true` para utilizar o banco cru em JSON `src/data/raw/transactions.json` neste primeiro teste).*
+O projeto ignora hooks sujos. Todos os dados respeitam o princípio de **Extração-Transformação-Carga (Data Pipeline)**:
+1. **RAW:** Os dados brutos entram isoladamente simulados na pasta `src/data/raw/transactions.json`.
+2. **EXTRACTOR:** A camada em `src/services/extractor.ts` filtra os objetos para o "Tempo Selecionado" na Sidebar. Cálculos de arrays pesados rodam apenas ali, limpos e isolados via TypeScript.
+3. **TRANSFORMER:** O serviço `transformers.ts` varre a lista gerada no extrator, transformando-a geometricamente em arrays exatos que comporão as Coordenadas `{ x, y }` consumidas instantaneamente pelos ApexCharts.
 
-Pronto! Seu ambiente local em Português já está configurado.
+Se deseja maior nível de detalhes, como acoplar seu Backend Live (API), leia a [DOCUMENTAÇÃO DETALHADA TÉCNICA (Nível Engenharia) AQUI!](./DOCUMENTACAO_DETALHADA.md).

@@ -2,70 +2,69 @@ import { useState, useEffect } from 'react';
 import mockData from '../data/raw/transactions.json';
 import { 
   extractAllTransactions, 
-  extractRecentTransactions 
+  filterTransactionsByPeriod,
+  filterTransactionsByYear,
+  extractRecentTransactions
 } from '../services/extractor/extractor';
 import { 
-  calculateKPIs, 
-  transformToAreaChart, 
-  transformToDonutChart,
-  type KPIStats,
-  type AreaChartData,
-  type DonutChartData,
+  calculateKPIs,
+  transformToMonthlySeries,
+  transformToSparkline,
+  transformCategoryDistribution,
+  type DashboardKPIs
 } from '../services/transformers/transformers';
-import { RawTransaction } from '../services/extractor/extractor';
 
-export interface DashboardData {
-  isLoading: boolean;
-  kpis: KPIStats | null;
-  areaChart: AreaChartData | null;
-  donutChart: DonutChartData | null;
-  recentActivity: RawTransaction[];
-}
+export const useDashboardData = () => {
+  const [year, setYear] = useState<number>(2025);
+  const [month, setMonth] = useState<number>(1); // Janeiro
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-export const useDashboardData = (): DashboardData => {
-  const [data, setData] = useState<DashboardData>({
-    isLoading: true,
-    kpis: null,
-    areaChart: null,
-    donutChart: null,
-    recentActivity: [],
-  });
+  // States
+  const [kpis, setKpis] = useState<DashboardKPIs | null>(null);
+  const [sparklineIncome, setSparklineIncome] = useState<number[]>([]);
+  const [sparklineExpense, setSparklineExpense] = useState<number[]>([]);
+  
+  // Categorias Mês e Ano
+  const [monthCategories, setMonthCategories] = useState<any>(null);
+  const [yearCategories, setYearCategories] = useState<any>(null);
+
+  // Análise Mensal (Barras) e Receitas x Despesas
+  const [monthlyAnalysis, setMonthlyAnalysis] = useState<any>(null);
+  const [recentActivity, setRecentActivity] = useState<any>([]);
 
   useEffect(() => {
-    // Simulate API fetch delay
     const fetchData = async () => {
+      setIsLoading(true);
       try {
-        // Extraction
         const allTx = extractAllTransactions(mockData);
-        // Load recent 10 transactions
-        const recentTx = extractRecentTransactions(allTx, 10);
+        
+        // Aplicafiltros base do SideBar
+        const monthTx = filterTransactionsByPeriod(allTx, year, month);
+        const yearTx = filterTransactionsByYear(allTx, year);
 
-        // Transformation
-        const kpis = calculateKPIs(allTx);
-        const areaChart = transformToAreaChart(allTx);
-        const donutChart = transformToDonutChart(allTx);
+        // Processa
+        setKpis(calculateKPIs(monthTx));
+        
+        setSparklineIncome(transformToSparkline(monthTx, 'income'));
+        setSparklineExpense(transformToSparkline(monthTx, 'expense'));
+        
+        setMonthCategories(transformCategoryDistribution(monthTx));
+        setYearCategories(transformCategoryDistribution(yearTx));
+        
+        setMonthlyAnalysis(transformToMonthlySeries(yearTx));
+        setRecentActivity(extractRecentTransactions(allTx, 8));
 
-        // State update
-        setData({
-          isLoading: false,
-          kpis,
-          areaChart,
-          donutChart,
-          recentActivity: recentTx,
-        });
       } catch (error) {
-        console.error("Error loading dashboard data", error);
-        // Error state handling could be added here
-        setData(prev => ({ ...prev, isLoading: false }));
+        console.error("Dashboard error:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
-
-    const timer = setTimeout(() => {
-      fetchData();
-    }, 800); // UI Loading state simulation
-
+    
+    // Simula carregamento
+    const timer = setTimeout(fetchData, 400); 
     return () => clearTimeout(timer);
-  }, []);
+  }, [year, month]);
 
-  return data;
+  return { isLoading, kpis, sparklineIncome, sparklineExpense, monthCategories, yearCategories, monthlyAnalysis, recentActivity, year, setYear, month, setMonth };
 };

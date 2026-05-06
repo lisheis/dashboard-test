@@ -8,15 +8,13 @@ export function cn(...inputs: ClassValue[]) {
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
-  interactive?: boolean;
 }
 
-export const Card: React.FC<CardProps> = ({ children, className, interactive = false, ...props }) => {
+export const Card: React.FC<CardProps> = ({ children, className, ...props }) => {
   return (
     <div 
       className={cn(
-        "glass-card p-6", 
-        interactive && "glass-card-hover",
+        "bg-[#161922] border-[1px] border-[rgba(255,255,255,0.05)] rounded-2xl shadow-xl", 
         className
       )}
       {...props}
